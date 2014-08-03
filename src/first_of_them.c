@@ -18,6 +18,9 @@ static int markerMin = -20;
 static int markerMax = 20;
 static Layer arr[8];
 
+const int HIGH_SCORE_KEY = 1337;
+
+
 static const GPathInfo SQUARE_POINTS = {
   4,
   (GPoint []) {
@@ -70,6 +73,21 @@ static GBitmap *zombie_image;
 
 static Layer *background_layer;
 static GBitmap *background_image;
+
+static void set_score() {
+	int highScore = persist_read_int(HIGH_SCORE_KEY);
+
+	if (count > highScore) {
+		// Save persistent data
+		persist_write_int(HIGH_SCORE_KEY, count);	
+		highScore = count;
+	}
+	
+	// Display high score in text_layer
+	static char buf[32];
+	snprintf(buf, 32, "High Score: %u", highScore);
+	text_layer_set_text(text_layer, buf);
+}
 
 static void player_layer_update_callback(Layer *me, GContext* ctx) {
   // We make sure the dimensions of the GRect to draw into
