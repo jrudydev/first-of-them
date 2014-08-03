@@ -1,0 +1,33 @@
+{
+  "uuid": "52ef5fd1-e6d6-4e8a-b632-86edfa7b6610",
+  "shortName": "first_of_them",
+  "longName": "First of Them",
+  "companyName": "Donk Studios",
+  "versionCode": 1,
+  "versionLabel": "1.0.0",
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": [
+      {
+        "type": "png",
+        "name": "IMAGE_DUDE",
+        "file": "images/player.png"
+      },
+	  {
+        "type": "png",
+        "name": "IMAGE_ZOMBIE",
+        "file": "images/zombie.png"
+      },
+	  {
+        "type": "png",
+        "name": "IMAGE_BACKGROUND",
+        "file": "images/background.png"
+      }
+    ]
+  }
+}
