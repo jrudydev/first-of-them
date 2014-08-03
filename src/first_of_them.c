@@ -10,15 +10,16 @@ static Layer *bullet_layer;
 static AppTimer *timer;
 static GPoint markerPos;
 static GPoint bulletPos;
-static bool direction;
+static bool direction = true;
 static float speed = 5;
 static float bulletSpeed = 10;
 static int count = 0;
 static int markerMin = -20;
 static int markerMax = 20;
-static Layer* arr[8];
+static Layer* arr[20];
 static int zombieCount = 0;
-static bool isShooting;
+static bool isShooting = false;
+static bool isGameOver = false;
 
 const int HIGH_SCORE_KEY = 1337;
 
@@ -105,13 +106,20 @@ static void zombie_layer_update_callback(Layer *me, GContext* ctx) {
   // We make sure the dimensions of the GRect to draw into
   // are equal to the size of the bitmap--otherwise the image
   // will automatically tile. Which might be what *you* want.
-
+if (!isGameOver)
+{
   GRect rect = layer_get_frame(me);
-
   rect.origin.x = rect.origin.x - 1;
-
+  
+  if (rect.origin.x < -100)
+  {
+	isGameOver = true;
+	static char body_text[50];
+	snprintf(body_text, sizeof(body_text), "Game Over");
+	text_layer_set_text(text_layer, body_text);
+  }
   layer_set_frame(me, rect);   
-
+}
   GRect bounds = zombie_image->bounds;
 
   graphics_context_set_compositing_mode(ctx,GCompOpAnd);
@@ -147,6 +155,11 @@ static void update_bullseye_layer(Layer *layer, GContext* ctx) {
 }
 
 static void update_marker_layer(Layer *layer, GContext* ctx) {
+if (!isGameOver)
+{
+  Layer *window_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(window_layer);
+
   int posX = (direction) ? markerPos.x + speed:  markerPos.x - speed;
   
   // check if new position is out of bounce if so bring back
@@ -155,11 +168,27 @@ static void update_marker_layer(Layer *layer, GContext* ctx) {
   {
 	posX = 0;
 	direction = true;
+	
+	// add the player images
+	zombie_layer = layer_create(bounds);
+	layer_set_update_proc(zombie_layer, zombie_layer_update_callback);
+	layer_add_child(window_layer, zombie_layer);
+
+	arr[zombieCount] = zombie_layer;
+	zombieCount++;
   }
   else if (posX >= 144)
   {
 	posX = 144;
 	direction = false;
+	
+	// add the player images
+	zombie_layer = layer_create(bounds);
+	layer_set_update_proc(zombie_layer, zombie_layer_update_callback);
+	layer_add_child(window_layer, zombie_layer);
+
+	arr[zombieCount] = zombie_layer;
+	zombieCount++;
   }// end if
 
   // save the current poistion of the marker
@@ -169,7 +198,7 @@ static void update_marker_layer(Layer *layer, GContext* ctx) {
   // set the speed limit
   if (speed < 15)
     speed += 0.01;
-
+}
   graphics_context_set_stroke_color(ctx, GColorBlack);
   graphics_context_set_fill_color(ctx, GColorBlack);
   gpath_draw_filled(ctx, marker_path);
@@ -177,6 +206,8 @@ static void update_marker_layer(Layer *layer, GContext* ctx) {
 }
 
 static void update_bullet_layer(Layer *layer, GContext* ctx) {
+if (!isGameOver)
+{  
   if (isShooting)
   {
     int posX = bulletPos.x + bulletSpeed;
@@ -197,9 +228,6 @@ static void update_bullet_layer(Layer *layer, GContext* ctx) {
 			isShooting = false;
 			bulletPos = GPoint (10, 9);
 			
-			//Layer *window_layer = window_get_root_layer(window);
-			//layer_remove_child(window_layer, layer);
-			
 			// move arry elements down
 			for (int i = 1; i < zombieCount; i++)
 			{
@@ -209,6 +237,12 @@ static void update_bullet_layer(Layer *layer, GContext* ctx) {
 			zombieCount--;
 			
 			layer_remove_from_parent(layer);
+			
+			count++;
+			
+			static char body_text[50];
+			snprintf(body_text, sizeof(body_text), "Count %u", count);
+			text_layer_set_text(text_layer, body_text);
 		}
     }
   }
@@ -218,6 +252,7 @@ static void update_bullet_layer(Layer *layer, GContext* ctx) {
     bulletPos = GPoint (bulletPos.x, bulletPos.y);
     gpath_move_to(bullet_path, bulletPos);
   }
+}
   graphics_context_set_stroke_color(ctx, GColorBlack);
   graphics_context_set_fill_color(ctx, GColorBlack);
   gpath_draw_filled(ctx, bullet_path);
@@ -238,6 +273,8 @@ static void timer_callback(void *context) {
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+if (!isGameOver)
+{ 
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
@@ -248,13 +285,8 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 	bulletPos = GPoint (10, 9);
 	vibes_short_pulse();
 	isShooting = true;
-	
-	count++;
-	
-	static char body_text[50];
-	snprintf(body_text, sizeof(body_text), "Count %u", count);
-	text_layer_set_text(text_layer, body_text);
   }
+}
 }
 /*
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -343,9 +375,6 @@ static void init(void) {
 
   markerPos = GPoint (75, 75);
   bulletPos = GPoint (10, 9);
-  direction = true;
-
-  isShooting = false;
 }
 
 static void deinit(void) {
