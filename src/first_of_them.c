@@ -16,7 +16,9 @@ static float bulletSpeed = 10;
 static int count = 0;
 static int markerMin = -20;
 static int markerMax = 20;
-static Layer arr[8];
+static Layer* arr[8];
+static int zombieCount = 0;
+static bool isShooting;
 
 const int HIGH_SCORE_KEY = 1337;
 
@@ -104,9 +106,16 @@ static void zombie_layer_update_callback(Layer *me, GContext* ctx) {
   // are equal to the size of the bitmap--otherwise the image
   // will automatically tile. Which might be what *you* want.
 
+  GRect rect = layer_get_frame(me);
+
+  rect.origin.x = rect.origin.x - 1;
+
+  layer_set_frame(me, rect);   
+
   GRect bounds = zombie_image->bounds;
 
-  graphics_draw_bitmap_in_rect(ctx, zombie_image, (GRect) { .origin = { 50, 0 }, .size = bounds.size });
+  graphics_context_set_compositing_mode(ctx,GCompOpAnd);
+  graphics_draw_bitmap_in_rect(ctx, zombie_image, (GRect) { .origin = { 100, 0 }, .size = bounds.size });
 
   //graphics_draw_bitmap_in_rect(ctx, image, (GRect) { .origin = { 80, 60 }, .size = bounds.size });
 }
@@ -168,16 +177,47 @@ static void update_marker_layer(Layer *layer, GContext* ctx) {
 }
 
 static void update_bullet_layer(Layer *layer, GContext* ctx) {
-  int posX = bulletPos.x + bulletSpeed;
+  if (isShooting)
+  {
+    int posX = bulletPos.x + bulletSpeed;
 
-  // save the current poistion of the marker
-  bulletPos = GPoint (posX, bulletPos.y);
-  gpath_move_to(bullet_path, bulletPos);
-  
-  // set the speed limit
-  if (bulletSpeed < 15)
-    bulletSpeed += 0.01;
+    // save the current poistion of the marker
+    bulletPos = GPoint (posX, bulletPos.y);
+    gpath_move_to(bullet_path, bulletPos);
 
+    if (arr[0] && zombieCount > 0)
+    {
+		Layer *layer = arr[0];
+	    GRect bounds = layer_get_bounds(layer);
+		GPoint center = grect_center_point(&bounds);
+		
+		if (posX > center.x)
+		{
+			// kill zombie
+			isShooting = false;
+			bulletPos = GPoint (10, 9);
+			
+			//Layer *window_layer = window_get_root_layer(window);
+			//layer_remove_child(window_layer, layer);
+			
+			// move arry elements down
+			for (int i = 1; i < zombieCount; i++)
+			{
+				arr[i-1] = arr[i];
+			}
+			
+			zombieCount--;
+			
+			layer_remove_from_parent(layer);
+		}
+    }
+  }
+  else 
+  {
+	// save the current poistion of the marker
+    bulletPos = GPoint (bulletPos.x, bulletPos.y);
+    gpath_move_to(bullet_path, bulletPos);
+  }
   graphics_context_set_stroke_color(ctx, GColorBlack);
   graphics_context_set_fill_color(ctx, GColorBlack);
   gpath_draw_filled(ctx, bullet_path);
@@ -207,6 +247,7 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   {
 	bulletPos = GPoint (10, 9);
 	vibes_short_pulse();
+	isShooting = true;
 	
 	count++;
 	
@@ -255,6 +296,9 @@ static void init(void) {
   zombie_layer = layer_create(bounds);
   layer_set_update_proc(zombie_layer, zombie_layer_update_callback);
   layer_add_child(window_layer, zombie_layer);
+  
+  arr[zombieCount] = zombie_layer;
+  zombieCount++;
 
   zombie_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_ZOMBIE);
 
@@ -300,6 +344,8 @@ static void init(void) {
   markerPos = GPoint (75, 75);
   bulletPos = GPoint (10, 9);
   direction = true;
+
+  isShooting = false;
 }
 
 static void deinit(void) {
