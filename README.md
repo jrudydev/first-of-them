@@ -1,4 +1,4 @@
-first_of_us
+first_of_them
 ===========
 
 Pebble game
@@ -14,3 +14,11 @@ timing bar
  when player hits the correct area within the bar
 cursor accelerates, character at top left corner shoots, and score increments as the player correctly hits the black portion
 of the bar.
+
+NEEDS TO BE ADDED
+animation for characters
+-zombie walking
+-zombie head shot splatter
+-Rifler recoil
+
+update game over
