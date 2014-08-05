@@ -2,6 +2,8 @@
 
 static Window *window;
 static TextLayer *text_layer;
+static TextLayer *high_score_layer;
+static TextLayer *msg_layer;
 static Layer *square_layer;
 static Layer *bullseye_layer;
 static Layer *marker_layer;
@@ -89,7 +91,7 @@ static void set_score() {
 	// Display high score in text_layer
 	static char buf[32];
 	snprintf(buf, 32, "High Score: %u", highScore);
-	text_layer_set_text(text_layer, buf);
+	text_layer_set_text(high_score_layer, buf);
 }
 
 static void player_layer_update_callback(Layer *me, GContext* ctx) {
@@ -114,9 +116,12 @@ if (!isGameOver)
   if (rect.origin.x < -100)
   {
 	isGameOver = true;
+	
+	set_score();
+	
 	static char body_text[50];
 	snprintf(body_text, sizeof(body_text), "Game Over");
-	text_layer_set_text(text_layer, body_text);
+	text_layer_set_text(msg_layer, body_text);
   }
   layer_set_frame(me, rect);   
 }
@@ -155,54 +160,54 @@ static void update_bullseye_layer(Layer *layer, GContext* ctx) {
 }
 
 static void update_marker_layer(Layer *layer, GContext* ctx) {
-if (!isGameOver)
-{
-  Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
+	if (!isGameOver)
+	{
+	  Layer *window_layer = window_get_root_layer(window);
+	  GRect bounds = layer_get_bounds(window_layer);
 
-  int posX = (direction) ? markerPos.x + speed:  markerPos.x - speed;
+	  int posX = (direction) ? markerPos.x + speed:  markerPos.x - speed;
   
-  // check if new position is out of bounce if so bring back
-  // and go other way
-  if (posX < 0)
-  {
-	posX = 0;
-	direction = true;
+	  // check if new position is out of bounce if so bring back
+	  // and go other way
+	  if (posX < 0)
+	  {
+		posX = 0;
+		direction = true;
 	
-	// add the player images
-	zombie_layer = layer_create(bounds);
-	layer_set_update_proc(zombie_layer, zombie_layer_update_callback);
-	layer_add_child(window_layer, zombie_layer);
+		// add the player images
+		zombie_layer = layer_create(bounds);
+		layer_set_update_proc(zombie_layer, zombie_layer_update_callback);
+		layer_add_child(window_layer, zombie_layer);
 
-	arr[zombieCount] = zombie_layer;
-	zombieCount++;
-  }
-  else if (posX >= 144)
-  {
-	posX = 144;
-	direction = false;
+		arr[zombieCount] = zombie_layer;
+		zombieCount++;
+	  }
+	  else if (posX >= 144)
+	  {
+		posX = 144;
+		direction = false;
 	
-	// add the player images
-	zombie_layer = layer_create(bounds);
-	layer_set_update_proc(zombie_layer, zombie_layer_update_callback);
-	layer_add_child(window_layer, zombie_layer);
+		// add the player images
+		zombie_layer = layer_create(bounds);
+		layer_set_update_proc(zombie_layer, zombie_layer_update_callback);
+		layer_add_child(window_layer, zombie_layer);
 
-	arr[zombieCount] = zombie_layer;
-	zombieCount++;
-  }// end if
+		arr[zombieCount] = zombie_layer;
+		zombieCount++;
+	  }// end if
 
-  // save the current poistion of the marker
-  markerPos = GPoint (posX, markerPos.y);
-  gpath_move_to(marker_path, markerPos);
+	  // save the current poistion of the marker
+	  markerPos = GPoint (posX, markerPos.y);
+	  gpath_move_to(marker_path, markerPos);
   
-  // set the speed limit
-  if (speed < 15)
-    speed += 0.01;
-}
-  graphics_context_set_stroke_color(ctx, GColorBlack);
-  graphics_context_set_fill_color(ctx, GColorBlack);
-  gpath_draw_filled(ctx, marker_path);
-  gpath_draw_outline(ctx, marker_path);
+	  // set the speed limit
+	  if (speed < 15)
+	    speed += 0.01;
+	}
+	  graphics_context_set_stroke_color(ctx, GColorBlack);
+	  graphics_context_set_fill_color(ctx, GColorBlack);
+	  gpath_draw_filled(ctx, marker_path);
+	  gpath_draw_outline(ctx, marker_path);
 }
 
 static void update_bullet_layer(Layer *layer, GContext* ctx) {
@@ -241,7 +246,7 @@ if (!isGameOver)
 			count++;
 			
 			static char body_text[50];
-			snprintf(body_text, sizeof(body_text), "Count %u", count);
+			snprintf(body_text, sizeof(body_text), "Dead Dead %u", count);
 			text_layer_set_text(text_layer, body_text);
 		}
     }
@@ -273,20 +278,25 @@ static void timer_callback(void *context) {
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-if (!isGameOver)
-{ 
-  Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
+	if (!isGameOver)
+	{ 
+	  Layer *window_layer = window_get_root_layer(window);
+	  GRect bounds = layer_get_bounds(window_layer);
 
-  GPoint center = grect_center_point(&bounds);
+	  GPoint center = grect_center_point(&bounds);
 
-  if (markerPos.x >= center.x + markerMin && markerPos.x <= center.x + markerMax)
-  {
-	bulletPos = GPoint (10, 9);
-	vibes_short_pulse();
-	isShooting = true;
-  }
-}
+	  if (markerPos.x >= center.x + markerMin && markerPos.x <= center.x + markerMax)
+	  {
+		bulletPos = GPoint (10, 9);
+		vibes_short_pulse();
+		isShooting = true;
+	  }
+	}
+	else
+	{
+		//count = 0;
+	
+	}
 }
 /*
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -304,6 +314,8 @@ static void click_config_provider(void *context) {
 }
 
 static void init(void) {
+  int highScore = persist_read_int(HIGH_SCORE_KEY);
+	
   window = window_create();
   window_set_click_config_provider(window, click_config_provider);
 
@@ -362,10 +374,23 @@ static void init(void) {
   bullet_path = gpath_create(&BULLET_POINTS);
   gpath_move_to(bullet_path, grect_center_point(&bounds));
 
-  text_layer = text_layer_create((GRect) { .origin = { 0, 72 }, .size = { bounds.size.w, 20 } });
-  text_layer_set_text(text_layer, "Press a button");
+  text_layer = text_layer_create((GRect) { .origin = { 0, 65 }, .size = { bounds.size.w, 20 } });
+  text_layer_set_text(text_layer, "Dead Dead");
   text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(text_layer));
+
+  msg_layer = text_layer_create((GRect) { .origin = { 0, 85 }, .size = { bounds.size.w, 20 } });
+  text_layer_set_text(msg_layer, "Press a button");
+  text_layer_set_text_alignment(msg_layer, GTextAlignmentCenter);
+  layer_add_child(window_layer, text_layer_get_layer(msg_layer));
+
+  high_score_layer = text_layer_create((GRect) { .origin = { 0, 110 }, .size = { bounds.size.w, 20 } });
+  	// Display high score in text_layer
+	static char buf[32];
+	snprintf(buf, 32, "High Score: %u", highScore);
+	text_layer_set_text(high_score_layer, buf);
+  text_layer_set_text_alignment(high_score_layer, GTextAlignmentCenter);
+  layer_add_child(window_layer, text_layer_get_layer(high_score_layer));
 
   const bool animated = true;
   window_stack_push(window, animated);
