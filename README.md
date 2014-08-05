@@ -16,8 +16,8 @@ cursor accelerates, character at top left corner shoots, and score increments as
 of the bar.
 
 ##NEEDS TO BE ADDED
-*animation for characters
-*zombie walking
-*zombie head shot splatter
-*Rifler recoil
-*update game over
+* Animation for characters
+* Zombie walking
+* Zombie head shot splatter
+* Rifler recoil
+* Update game over
