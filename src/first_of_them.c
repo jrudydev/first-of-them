@@ -128,7 +128,7 @@ if (!isGameOver)
   GRect bounds = zombie_image->bounds;
 
   graphics_context_set_compositing_mode(ctx,GCompOpAnd);
-  graphics_draw_bitmap_in_rect(ctx, zombie_image, (GRect) { .origin = { 100, 0 }, .size = bounds.size });
+  graphics_draw_bitmap_in_rect(ctx, zombie_image, (GRect) { .origin = { 100, 2}, .size = bounds.size });
 
   //graphics_draw_bitmap_in_rect(ctx, image, (GRect) { .origin = { 80, 60 }, .size = bounds.size });
 }
@@ -278,10 +278,12 @@ static void timer_callback(void *context) {
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+
+	Layer *window_layer = window_get_root_layer(window);
+	GRect bounds = layer_get_bounds(window_layer);
+	  
 	if (!isGameOver)
 	{ 
-	  Layer *window_layer = window_get_root_layer(window);
-	  GRect bounds = layer_get_bounds(window_layer);
 
 	  GPoint center = grect_center_point(&bounds);
 
@@ -292,11 +294,40 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 		isShooting = true;
 	  }
 	}
-	else
-	{
-		//count = 0;
 	
+	else {
+		// Reset the game
+		isGameOver = false;
+		text_layer_set_text(msg_layer, "Press Select Button");
+
+		// Reset variables
+		markerPos = GPoint (75, 75);
+		bulletPos = GPoint (10, 9);
+
+		direction = true;
+		speed = 5;
+		bulletSpeed = 10;
+		count = 0;
+		
+		static char body_text[50];
+		snprintf(body_text, sizeof(body_text), "Dead Dead %u", count);
+
+		// Clear the zombie array and amount of zombies
+		for (int i = 0; i < zombieCount; i++) {
+			layer_destroy(arr[i]);
+			arr[i] = NULL;
+		}
+
+		zombieCount = 0;
+		zombie_layer = layer_create(bounds);
+	  	layer_set_update_proc(zombie_layer, zombie_layer_update_callback);
+	  	layer_add_child(window_layer, zombie_layer);
+
+	  	arr[zombieCount] = zombie_layer;
+	  	zombieCount++;
 	}
+	
+
 }
 /*
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -374,17 +405,17 @@ static void init(void) {
   bullet_path = gpath_create(&BULLET_POINTS);
   gpath_move_to(bullet_path, grect_center_point(&bounds));
 
-  text_layer = text_layer_create((GRect) { .origin = { 0, 65 }, .size = { bounds.size.w, 20 } });
+  text_layer = text_layer_create((GRect) { .origin = { 0, 62 }, .size = { bounds.size.w, 20 } });
   text_layer_set_text(text_layer, "Dead Dead");
   text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(text_layer));
 
   msg_layer = text_layer_create((GRect) { .origin = { 0, 85 }, .size = { bounds.size.w, 20 } });
-  text_layer_set_text(msg_layer, "Press a button");
+  text_layer_set_text(msg_layer, "Press Select Button");
   text_layer_set_text_alignment(msg_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(msg_layer));
 
-  high_score_layer = text_layer_create((GRect) { .origin = { 0, 110 }, .size = { bounds.size.w, 20 } });
+  high_score_layer = text_layer_create((GRect) { .origin = { 0, 109 }, .size = { bounds.size.w, 20 } });
   	// Display high score in text_layer
 	static char buf[32];
 	snprintf(buf, 32, "High Score: %u", highScore);
