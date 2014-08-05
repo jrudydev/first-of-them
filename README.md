@@ -19,5 +19,6 @@ of the bar.
 * Animation for characters
 * Zombie walking
 * Zombie head shot splatter
+* Small Icon
 * Rifler recoil
 * Update game over
