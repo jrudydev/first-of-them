@@ -1,10 +1,10 @@
 {
-  "uuid": "52ef5fd1-e6d6-4e8a-b632-86edfa7b6610",
+  "uuid": "2ff7fa04-6011-4a98-8a3b-a826a4b899f8",
   "shortName": "First of Them",
   "longName": "First of Them",
   "companyName": "Donk Studios",
   "versionCode": 1,
-  "versionLabel": "1.0.0",
+  "versionLabel": "1.0.1",
   "watchapp": {
     "watchface": false
   },
