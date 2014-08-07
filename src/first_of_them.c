@@ -18,7 +18,7 @@ static float bulletSpeed = 10;
 static int count = 0;
 static int markerMin = -20;
 static int markerMax = 20;
-static Layer* arr[20];
+static Layer* arr[100];
 static int zombieCount = 0;
 static bool isShooting = false;
 static bool isGameOver = false;
